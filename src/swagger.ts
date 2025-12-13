@@ -1,4 +1,4 @@
-import app from "./app";
+import {app} from "./app";
 import swaggerUi from "swagger-ui-express";
 import auth from "./apiDocs/auth.json";
 
