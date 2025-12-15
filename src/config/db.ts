@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
+import dotev from 'dotenv';
 
-const MONGO_URI = "mongodb://admin:secret123@localhost:27017";
+
+dotev.config();
+console.log(process.env.MONGO_URL,"urllll")
+const MONGO_URI = process.env.MONGO_URL || "mongodb://admin:secret123@localhost:27017";
 
 export const connectDB = async (): Promise<void> => {
     try {

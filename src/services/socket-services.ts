@@ -18,71 +18,83 @@ const getActiveUsers = async () => {
 
 
 
-io.on('connection', (socket :any) => {
-  
+io.on('connection', (socket: any) => {
+
   userSockets.set(socket.userId, socket.id);
-   socket.broadcast.emit('active-list', { users : Array.from(userSockets.keys())});
-  
-  socket.on('room:join', async (roomId : string) => {
+
+  socket.on('room:join', async (roomId: string) => {
     try {
       const room = await Room.findById(roomId);
-      if (!room ) {
+      if (!room) {
         return socket.emit('error', { message: 'Access denied' });
       }
-      
+
       socket.join(roomId);
       socket.currentRoom = roomId;
-      socket.emit('room:joined', { roomId });      
-    } catch (error : any) {
+      socket.emit('room:joined', { roomId });
+    } catch (error: any) {
       socket.emit('error', { message: error.message });
     }
   });
-  
-  socket.on('room:leave', async (roomId : string) => {
+
+  socket.on('room:leave', async (roomId: string) => {
     socket.leave(roomId);
     socket.currentRoom = null;
-    
+
   });
-  
-  socket.on('message:send', async (data : any) => {
+
+  socket.broadcast.emit('active-list', {
+    users: Array.from(userSockets.keys())
+  });
+
+
+  socket.emit("active-list", {
+    users: Array.from(userSockets.keys())
+  })
+
+  socket.on('message:send', async (data: any) => {
     try {
       const { roomId, content, type = 'text' } = data;
-      
+
       const message = new Message({
         room: roomId,
         sender: socket.userId,
-        content,
-        type
+        content
       });
-     const saved =  await message.save();
+      const saved = await message.save();
       await message.populate('sender', 'name');
-      
+
       // // Update room's last message
       // await Room.findByIdAndUpdate(roomId, { lastMessage: message._id });
-      
+
       // Emit to all users in the room
-      io.to(roomId).emit('message:receive', message);
-    } catch (error : any) {
+      console.log(message, "mss")
+      io.to(roomId).emit('message:receive', {
+        room: roomId,
+        sender: socket.userId,
+        content
+      });
+    } catch (error: any) {
       socket.emit('error', { message: error.message });
     }
   });
-  
-  socket.on('typing:start', ({ roomId } : {roomId : string}) => {
-    socket.to(roomId).emit('typing:UserModel', { 
-      userId: socket.userId, 
+
+  socket.on('typing:start', ({ roomId }: { roomId: string }) => {
+    socket.to(roomId).emit('typing:UserModel', {
+      userId: socket.userId,
       username: socket.username,
-      isTyping: true 
+      isTyping: true
     });
   });
-  
-  socket.on('typing:stop', ({ roomId }:{roomId : string}) => {
-    socket.to(roomId).emit('typing:UserModel', { 
-      userId: socket.userId, 
+
+  socket.on('typing:stop', ({ roomId }: { roomId: string }) => {
+    socket.to(roomId).emit('typing:UserModel', {
+      userId: socket.userId,
       username: socket.username,
-      isTyping: false 
+      isTyping: false
     });
   });
-  
+
   socket.on('get-active-users', async (callback: any) => {
     try {
       const users = await getActiveUsers();
@@ -92,28 +104,28 @@ io.on('connection', (socket :any) => {
     }
   });
 
-  
 
 
-  socket.on('message:read', async ({ messageId, roomId }:{roomId : string , messageId: string}) => {
+
+  socket.on('message:read', async ({ messageId, roomId }: { roomId: string, messageId: string }) => {
     try {
-      await Message.findByIdAndUpdate(messageId, {
-        $addToSet: { readBy: socket.userId }
-      });
+      // await Message.findByIdAndUpdate(messageId, {
+      //   $addToSet: { readBy: socket.userId }
+      // });
       socket.to(roomId).emit('message:read', { messageId, userId: socket.userId });
-    } catch (error : any) {
+    } catch (error: any) {
       socket.emit('error', { message: error.message });
     }
   });
-  
+
   // Disconnect
   socket.on('disconnect', async () => {
     console.log(`User disconnected: ${socket.userId}`);
     userSockets.delete(socket.userId);
-    
-    
-    socket.broadcast.emit('active-list', { 
-     users :  Array.from(userSockets.keys())
+
+
+    socket.broadcast.emit('active-list', {
+      users: Array.from(userSockets.keys())
     });
   });
 });

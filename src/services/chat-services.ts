@@ -38,7 +38,8 @@ const rooms = await Room.aggregate([
   {
     $project: {
       _id: 1,
-      name: "$otherUser.name"
+      name: "$otherUser.name",
+      reciverId: "$otherUser._id"
     }
   }
 ]);
