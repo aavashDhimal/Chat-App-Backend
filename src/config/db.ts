@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const MONGO_URI = "mongodb://admin:admin123@192.168.49.2:32017";
+const MONGO_URI = "mongodb://admin:secret123@localhost:27017";
 
 export const connectDB = async (): Promise<void> => {
     try {

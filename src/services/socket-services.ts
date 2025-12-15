@@ -5,12 +5,23 @@ import Message from "../model/message-model";
 
 const userSockets = new Map();
 
+const getActiveUsers = async () => {
+  const activeUsers = [];
+  for (const [userId, socketId] of userSockets.entries()) {
+    const user = await UserModel.findById(userId).select('_id name email');
+    if (user) {
+      activeUsers.push({ ...user.toObject(), isOnline: true });
+    }
+  }
+  return activeUsers;
+};
+
+
+
 io.on('connection', (socket :any) => {
-  console.log(`User connected: ${socket.username}`);
   
   userSockets.set(socket.userId, socket.id);
-  
-  socket.broadcast.emit('UserModel:online', { userId: socket.userId, username: socket.username });
+   socket.broadcast.emit('active-list', { users : Array.from(userSockets.keys())});
   
   socket.on('room:join', async (roomId : string) => {
     try {
@@ -21,15 +32,16 @@ io.on('connection', (socket :any) => {
       
       socket.join(roomId);
       socket.currentRoom = roomId;
-      socket.emit('room:joined', { roomId });
+      socket.emit('room:joined', { roomId });      
     } catch (error : any) {
       socket.emit('error', { message: error.message });
     }
   });
   
-  socket.on('room:leave', (roomId : string) => {
+  socket.on('room:leave', async (roomId : string) => {
     socket.leave(roomId);
     socket.currentRoom = null;
+    
   });
   
   socket.on('message:send', async (data : any) => {
@@ -42,11 +54,11 @@ io.on('connection', (socket :any) => {
         content,
         type
       });
-      await message.save();
-      await message.populate('sender', 'username');
+     const saved =  await message.save();
+      await message.populate('sender', 'name');
       
-      // Update room's last message
-      await Room.findByIdAndUpdate(roomId, { lastMessage: message._id });
+      // // Update room's last message
+      // await Room.findByIdAndUpdate(roomId, { lastMessage: message._id });
       
       // Emit to all users in the room
       io.to(roomId).emit('message:receive', message);
@@ -71,7 +83,18 @@ io.on('connection', (socket :any) => {
     });
   });
   
-  // Read receipt
+  socket.on('get-active-users', async (callback: any) => {
+    try {
+      const users = await getActiveUsers();
+      callback({ success: true, data: users });
+    } catch (error: any) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  
+
+
   socket.on('message:read', async ({ messageId, roomId }:{roomId : string , messageId: string}) => {
     try {
       await Message.findByIdAndUpdate(messageId, {
@@ -85,18 +108,12 @@ io.on('connection', (socket :any) => {
   
   // Disconnect
   socket.on('disconnect', async () => {
-    console.log(`UserModel disconnected: ${socket.username}`);
+    console.log(`User disconnected: ${socket.userId}`);
     userSockets.delete(socket.userId);
     
-    // Update UserModel status
-    await UserModel.findByIdAndUpdate(socket.userId, { 
-      isOnline: false,
-      lastSeen: new Date()
-    });
     
-    socket.broadcast.emit('UserModel:offline', { 
-      userId: socket.userId,
-      lastSeen: new Date()
+    socket.broadcast.emit('active-list', { 
+     users :  Array.from(userSockets.keys())
     });
   });
 });

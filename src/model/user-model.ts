@@ -5,6 +5,7 @@ export interface IUser extends Document {
     email: string;
     createdAt: Date;
     password: string;
+    isOnline: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -12,6 +13,10 @@ const UserSchema = new Schema<IUser>({
         type: String,
         required: true,
         trim: true,
+    },
+    isOnline: {
+        type: Boolean,
+        default: false,
     },
     email: {
         type: String,
