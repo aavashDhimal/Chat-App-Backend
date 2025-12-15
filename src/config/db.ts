@@ -1,9 +1,6 @@
 import mongoose from "mongoose";
-import dotev from 'dotenv';
 
 
-dotev.config();
-console.log(process.env.MONGO_URL,"urllll")
 const MONGO_URI = process.env.MONGO_URL || "mongodb://admin:secret123@localhost:27017";
 
 export const connectDB = async (): Promise<void> => {
@@ -21,7 +18,6 @@ export const connectDB = async (): Promise<void> => {
     }
 };
 
-// Graceful shutdown
 process.on("SIGINT", async () => {
     await mongoose.connection.close();
     console.log("MongoDB connection closed (SIGINT)");

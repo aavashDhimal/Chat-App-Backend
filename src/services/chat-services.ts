@@ -69,7 +69,6 @@ export const createRoom = async ( members: string[], userId: string) => {
         createdBy: userId
     });
     await room.save();
-    // await room.populate('members', 'username email');
     return room;
 };
 

@@ -10,6 +10,11 @@ const roomSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  readBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'user',
+    required: true
+  }],
   updatedAt: {
     type: Date,
     default: Date.now
@@ -20,5 +25,5 @@ roomSchema.index({ members: 1 });
 roomSchema.index({ createdAt: -1 });
 
 
-  const Room =mongoose.model('room', roomSchema);
-  export default Room
+const Room = mongoose.model('room', roomSchema);
+export default Room

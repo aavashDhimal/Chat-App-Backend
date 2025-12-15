@@ -68,7 +68,6 @@ io.on('connection', (socket: any) => {
       // await Room.findByIdAndUpdate(roomId, { lastMessage: message._id });
 
       // Emit to all users in the room
-      console.log(message, "mss")
       io.to(roomId).emit('message:receive', {
         room: roomId,
         sender: socket.userId,
@@ -109,9 +108,6 @@ io.on('connection', (socket: any) => {
 
   socket.on('message:read', async ({ messageId, roomId }: { roomId: string, messageId: string }) => {
     try {
-      // await Message.findByIdAndUpdate(messageId, {
-      //   $addToSet: { readBy: socket.userId }
-      // });
       socket.to(roomId).emit('message:read', { messageId, userId: socket.userId });
     } catch (error: any) {
       socket.emit('error', { message: error.message });

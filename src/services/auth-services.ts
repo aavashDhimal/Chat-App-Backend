@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import UserModel, { IUser } from "../model/user-model";
 
 const JWT_SECRET = process.env.JWT_SECRET || "changeme";
-
 export const registerUser = async (
     name : string,
     email: string,

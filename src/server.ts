@@ -3,20 +3,19 @@ import { connectDB } from "./config/db";
 import "./swagger";
 import "./services/socket-services";
 import http from "http";
+import dotenv from "dotenv";
 
+dotenv.config();
 connectDB();
 
 const httpServer = http.createServer(app);
 
-// Attach socket.io to HTTP server
 io.attach(httpServer);
 
-// Start HTTP server
-httpServer.listen(4040, () => {
+httpServer.listen(process.env.SERVER_PORT, () => {
     console.log("HTTP Server listening on port 4040");
 });
 
-// Socket.io is running on the same server
 io.on("connection", () => {
     console.log("Socket.io server ready");
 });
